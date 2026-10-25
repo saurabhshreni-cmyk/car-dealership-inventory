@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import ConfirmDialog from "../components/ConfirmDialog";
 import FilterBar from "../components/FilterBar";
+import RestockDialog from "../components/RestockDialog";
 import { useToast } from "../components/Toast";
 import VehicleCard from "../components/VehicleCard";
+import VehicleFormDialog from "../components/VehicleFormDialog";
 import { useDebouncedValue } from "../lib/useDebouncedValue";
 
 const EMPTY_FILTERS = { make: "", model: "", category: "", min_price: "", max_price: "" };
@@ -37,11 +40,14 @@ function Notice({ title, children, tone = "plain" }) {
   );
 }
 
+const addButton =
+  "border-2 border-ink bg-signal px-5 py-3 text-xs font-bold uppercase tracking-widest text-ink shadow-hard transition hover:-translate-y-0.5 hover:bg-ink hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+
 const ghostButton =
   "border-2 border-ink px-4 py-2 text-xs font-bold uppercase tracking-widest transition hover:bg-ink hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal";
 
 export default function DashboardPage() {
-  const { api } = useAuth();
+  const { api, isAdmin } = useAuth();
   const toast = useToast();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const debouncedFilters = useDebouncedValue(filters, SEARCH_DEBOUNCE_MS);
@@ -49,6 +55,7 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [categories, setCategories] = useState([]);
   const [busyId, setBusyId] = useState(null);
+  const [dialog, setDialog] = useState(null);
   const latestRequest = useRef(0);
 
   const load = useCallback(
@@ -97,6 +104,39 @@ export default function DashboardPage() {
     }
   }
 
+  const closeDialog = useCallback(() => setDialog(null), []);
+
+  const replaceVehicle = (updated) =>
+    setView((current) => ({ ...current, vehicles: current.vehicles.map((v) => (v.id === updated.id ? updated : v)) }));
+
+  async function saveVehicle(payload) {
+    if (dialog.vehicle) {
+      replaceVehicle(await api.updateVehicle(dialog.vehicle.id, payload));
+      toast.success(`Updated ${payload.make} ${payload.model}`);
+    } else {
+      const created = await api.createVehicle(payload);
+      setView((current) => ({ ...current, vehicles: [...current.vehicles, created] }));
+      setCategories((current) => [...new Set([...current, created.category])].sort());
+      toast.success(`Added ${created.make} ${created.model}`);
+    }
+    closeDialog();
+  }
+
+  async function restock(amount) {
+    const updated = await api.restockVehicle(dialog.vehicle.id, amount);
+    replaceVehicle(updated);
+    toast.success(`Added ${amount} to ${updated.make} ${updated.model}`);
+    closeDialog();
+  }
+
+  async function removeVehicle() {
+    const { vehicle } = dialog;
+    await api.deleteVehicle(vehicle.id);
+    setView((current) => ({ ...current, vehicles: current.vehicles.filter((v) => v.id !== vehicle.id) }));
+    toast.success(`Deleted ${vehicle.make} ${vehicle.model}`);
+    closeDialog();
+  }
+
   const filtersActive = hasActiveFilters(filters);
   const count = view.vehicles.length;
   const heading = useMemo(() => (filtersActive ? "Matching vehicles" : "On the lot"), [filtersActive]);
@@ -112,6 +152,11 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
+        {isAdmin && (
+          <button type="button" onClick={() => setDialog({ type: "form" })} className={addButton}>
+            Add vehicle
+          </button>
+        )}
       </div>
 
       <FilterBar filters={filters} categories={categories} onChange={setFilters} />
@@ -135,6 +180,10 @@ export default function DashboardPage() {
             <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className={ghostButton}>
               Clear filters
             </button>
+          ) : isAdmin ? (
+            <button type="button" onClick={() => setDialog({ type: "form" })} className={ghostButton}>
+              Add vehicle
+            </button>
           ) : (
             <p>Check back soon.</p>
           )}
@@ -149,12 +198,24 @@ export default function DashboardPage() {
           {view.vehicles.map((vehicle) => (
             <li key={vehicle.id} className="flex">
               <div className="flex w-full">
-                <VehicleCard vehicle={vehicle} isAdmin={false} busy={busyId === vehicle.id} onPurchase={handlePurchase} />
+                <VehicleCard
+                  vehicle={vehicle}
+                  isAdmin={isAdmin}
+                  busy={busyId === vehicle.id}
+                  onPurchase={handlePurchase}
+                  onEdit={(v) => setDialog({ type: "form", vehicle: v })}
+                  onRestock={(v) => setDialog({ type: "restock", vehicle: v })}
+                  onDelete={(v) => setDialog({ type: "delete", vehicle: v })}
+                />
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      {dialog?.type === "form" && <VehicleFormDialog vehicle={dialog.vehicle} onSubmit={saveVehicle} onClose={closeDialog} />}
+      {dialog?.type === "restock" && <RestockDialog vehicle={dialog.vehicle} onSubmit={restock} onClose={closeDialog} />}
+      {dialog?.type === "delete" && <ConfirmDialog vehicle={dialog.vehicle} onConfirm={removeVehicle} onClose={closeDialog} />}
     </div>
   );
 }
