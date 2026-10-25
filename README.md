@@ -399,8 +399,17 @@ dist/assets/index-Dc8vvaiT.js   196.26 kB │ gzip: 61.95 kB
 
 ## My AI Usage
 
-- **Claude Code** did the implementation of this project — backend, frontend, tests, Docker/CI/deploy configuration and this README — working under the strict TDD rules and commit conventions I set in `CLAUDE.md` and in my prompt (see [PROMPTS.md](PROMPTS.md)).
-- **Claude (claude.ai)** was used to plan the work.
-- I reviewed the output.
+**Tools I used**
+- Claude (claude.ai chat) for planning
+- Claude Code for building the project
 
-TODO(Saurabh): add my personal reflection
+**How I used them**
+I gave Claude the company JD, my resume and the assignment, and used it to understand what the kata is really asking for (TDD history, co-author trailers, PROMPTS.md), to pick the stack, to plan the steps and to get ideas that make the project a bit different, like the atomic purchase, purchase history, CI and docker compose. It also wrote the prompts I pasted into Claude Code.
+
+Claude Code wrote the code and the tests. I set it up with a CLAUDE.md that forces red-green-refactor and a co-author trailer on every commit. I didn't write the code line by line myself. After the build I ran a second prompt that made it audit its own work like a strict reviewer. That audit found six real bugs (for example a token without an expiry being accepted, a login timing leak, and a modal layout bug), and they were fixed test-first.
+
+**What I did myself**
+I ran the test suites, clicked through the app, and ran the audit prompt. I'm still reading the code in detail for the interview.
+
+**Reflection**
+AI made me a lot faster. The downside is that it is easy to end up knowing only the surface of what it built instead of the depth. I understand the idea behind the atomic purchase and what the audit fixed, but I'm still going through the code properly. I want to keep using AI for speed while making sure I actually understand every piece I submit.
