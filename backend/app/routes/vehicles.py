@@ -4,8 +4,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from app.models.user import User
-from app.routes.deps import get_current_user, get_vehicle_service, require_admin
+from app.routes.deps import get_current_user, get_inventory_service, get_vehicle_service, require_admin
+from app.schemas.purchase import PurchaseOut
 from app.schemas.vehicle import VehicleCreate, VehicleOut, VehicleSearchParams
+from app.services.inventory_service import InventoryService, OutOfStockError
 from app.services.vehicle_service import VehicleNotFoundError, VehicleService
 
 router = APIRouter(prefix="/api/vehicles", tags=["vehicles"], dependencies=[Depends(get_current_user)])
@@ -62,3 +64,18 @@ def delete_vehicle(
     except VehicleNotFoundError:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehicle not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{vehicle_id}/purchase", response_model=PurchaseOut, status_code=status.HTTP_201_CREATED)
+def purchase_vehicle(
+    vehicle_id: int,
+    user: User = Depends(get_current_user),
+    service: InventoryService = Depends(get_inventory_service),
+):
+    """Buy one unit of a vehicle; 409 when it is out of stock."""
+    try:
+        return service.purchase(vehicle_id, user.id)
+    except VehicleNotFoundError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehicle not found")
+    except OutOfStockError:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Vehicle is out of stock")

@@ -5,9 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import Role, User
+from app.repositories.purchase_repository import PurchaseRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.vehicle_repository import VehicleRepository
 from app.services.auth_service import AuthService
+from app.services.inventory_service import InventoryService
 from app.services.security import InvalidTokenError, decode_access_token
 from app.services.vehicle_service import VehicleService
 
@@ -32,6 +34,19 @@ def get_vehicle_repository(db: Session = Depends(get_db)) -> VehicleRepository:
 def get_vehicle_service(vehicles: VehicleRepository = Depends(get_vehicle_repository)) -> VehicleService:
     """Provide a VehicleService."""
     return VehicleService(vehicles)
+
+
+def get_purchase_repository(db: Session = Depends(get_db)) -> PurchaseRepository:
+    """Provide a PurchaseRepository bound to the request session."""
+    return PurchaseRepository(db)
+
+
+def get_inventory_service(
+    vehicles: VehicleRepository = Depends(get_vehicle_repository),
+    purchases: PurchaseRepository = Depends(get_purchase_repository),
+) -> InventoryService:
+    """Provide an InventoryService."""
+    return InventoryService(vehicles, purchases)
 
 
 def _unauthorized(detail: str) -> HTTPException:
