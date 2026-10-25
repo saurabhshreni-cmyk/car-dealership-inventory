@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 
 /**
- * Accessible modal: labelled, closes on Escape / backdrop click, moves focus in
+ * Accessible modal (rendered in a portal on <body>, so page spacing utilities cannot offset its
+ * fixed backdrop): labelled, closes on Escape / backdrop click, moves focus in
  * (to the first field, or the dialog itself) and restores focus on close.
  */
 export default function Modal({ title, onClose, children, role = "dialog" }) {
@@ -23,7 +25,7 @@ export default function Modal({ title, onClose, children, role = "dialog" }) {
     };
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-ink/60 p-0 sm:items-center sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         ref={panelRef}
@@ -38,7 +40,8 @@ export default function Modal({ title, onClose, children, role = "dialog" }) {
         </h2>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

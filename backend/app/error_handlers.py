@@ -19,6 +19,7 @@ def register_error_handlers(app: FastAPI) -> None:
     for exc_type, status_code, detail, headers in _MAPPINGS:
 
         def handler(_request: Request, _exc: Exception, _s=status_code, _d=detail, _h=headers):
+            """Return the mapped status, message and headers as a JSON error body."""
             return JSONResponse({"detail": _d}, status_code=_s, headers=_h)
 
         app.add_exception_handler(exc_type, handler)
