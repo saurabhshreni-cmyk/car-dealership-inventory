@@ -35,3 +35,6 @@ Thumbs.db
 
 # Screenshots tooling
 .playwright/
+
+*.db-shm
+*.db-wal
