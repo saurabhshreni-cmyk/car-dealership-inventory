@@ -35,3 +35,7 @@ class InventoryService:
         if vehicle is None:
             raise VehicleNotFoundError(vehicle_id)
         return vehicle
+
+    def purchases_for(self, user_id: int) -> list[Purchase]:
+        """Return a user's purchase history, newest first."""
+        return self._purchases.list_for_user(user_id)
