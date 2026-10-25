@@ -1,4 +1,6 @@
-"""Registration business logic."""
+"""Registration and login business logic."""
+from functools import lru_cache
+
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.services.security import create_access_token, hash_password, verify_password
@@ -11,6 +13,12 @@ class EmailAlreadyRegisteredError(Exception):
 def normalise_email(email: str) -> str:
     """Lower-case and trim an email address."""
     return email.strip().lower()
+
+
+@lru_cache
+def _decoy_hash() -> str:
+    """A throw-away bcrypt hash verified against when the email is unknown (constant-work login)."""
+    return hash_password("decoy-password-never-matches")
 
 
 class InvalidCredentialsError(Exception):
@@ -33,6 +41,8 @@ class AuthService:
     def login(self, email: str, password: str) -> tuple[str, User]:
         """Return (access_token, user) or raise InvalidCredentialsError."""
         user = self._users.get_by_email(normalise_email(email))
-        if user is None or not verify_password(password, user.password_hash):
+        password_hash = user.password_hash if user is not None else _decoy_hash()
+        password_ok = verify_password(password, password_hash)
+        if user is None or not password_ok:
             raise InvalidCredentialsError()
         return create_access_token(str(user.id)), user
