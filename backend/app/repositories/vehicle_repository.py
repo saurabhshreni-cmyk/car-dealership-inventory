@@ -1,5 +1,5 @@
 """Persistence for vehicles."""
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.models.vehicle import Vehicle
@@ -58,3 +58,15 @@ class VehicleRepository:
         """Remove a vehicle."""
         self._session.delete(vehicle)
         self._session.commit()
+
+    def add_stock(self, vehicle_id: int, amount: int) -> Vehicle | None:
+        """Atomically add ``amount`` units; return the vehicle, or None if it does not exist."""
+        vehicle = self._session.scalars(
+            update(Vehicle)
+            .where(Vehicle.id == vehicle_id)
+            .values(quantity=Vehicle.quantity + amount)
+            .returning(Vehicle)
+            .execution_options(populate_existing=True)
+        ).first()
+        self._session.commit()
+        return vehicle

@@ -1,5 +1,6 @@
 """Inventory operations: purchasing and restocking."""
 from app.models.purchase import Purchase
+from app.models.vehicle import Vehicle
 from app.repositories.purchase_repository import PurchaseRepository
 from app.repositories.vehicle_repository import VehicleRepository
 from app.services.vehicle_service import VehicleNotFoundError
@@ -27,3 +28,10 @@ class InventoryService:
         if self._vehicles.get(vehicle_id) is None:
             raise VehicleNotFoundError(vehicle_id)
         raise OutOfStockError(vehicle_id)
+
+    def restock(self, vehicle_id: int, amount: int) -> Vehicle:
+        """Add ``amount`` units to a vehicle or raise VehicleNotFoundError."""
+        vehicle = self._vehicles.add_stock(vehicle_id, amount)
+        if vehicle is None:
+            raise VehicleNotFoundError(vehicle_id)
+        return vehicle

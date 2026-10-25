@@ -2,7 +2,7 @@
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, StringConstraints, model_validator
+from pydantic import BaseModel, StrictInt, ConfigDict, Field, PlainSerializer, StringConstraints, model_validator
 
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
 Price = Annotated[
@@ -49,3 +49,9 @@ class VehicleSearchParams(BaseModel):
         if self.min_price is not None and self.max_price is not None and self.min_price > self.max_price:
             raise ValueError("min_price must not exceed max_price")
         return self
+
+
+class RestockRequest(BaseModel):
+    """Payload to add stock to a vehicle."""
+
+    amount: StrictInt = Field(gt=0)

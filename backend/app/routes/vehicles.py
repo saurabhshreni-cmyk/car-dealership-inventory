@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from app.models.user import User
 from app.routes.deps import get_current_user, get_inventory_service, get_vehicle_service, require_admin
 from app.schemas.purchase import PurchaseOut
-from app.schemas.vehicle import VehicleCreate, VehicleOut, VehicleSearchParams
+from app.schemas.vehicle import RestockRequest, VehicleCreate, VehicleOut, VehicleSearchParams
 from app.services.inventory_service import InventoryService, OutOfStockError
 from app.services.vehicle_service import VehicleNotFoundError, VehicleService
 
@@ -79,3 +79,17 @@ def purchase_vehicle(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehicle not found")
     except OutOfStockError:
         raise HTTPException(status.HTTP_409_CONFLICT, "Vehicle is out of stock")
+
+
+@router.post("/{vehicle_id}/restock", response_model=VehicleOut)
+def restock_vehicle(
+    vehicle_id: int,
+    payload: RestockRequest,
+    _admin: User = Depends(require_admin),
+    service: InventoryService = Depends(get_inventory_service),
+):
+    """Add stock to a vehicle (admin only)."""
+    try:
+        return service.restock(vehicle_id, payload.amount)
+    except VehicleNotFoundError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehicle not found")
