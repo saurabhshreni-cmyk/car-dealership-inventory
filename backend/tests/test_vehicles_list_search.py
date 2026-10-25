@@ -68,3 +68,19 @@ def test_search_rejects_inverted_price_range(client, auth_headers):
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("term", ["%", "_", "100%", "a\b"])
+def test_search_treats_like_wildcards_literally(client, auth_headers, fleet, term):
+    response = client.get("/api/vehicles/search", params={"model": term}, headers=auth_headers())
+
+    assert response.status_code == 200
+    assert names(response) == []
+
+
+def test_search_finds_models_containing_wildcard_characters(client, auth_headers, stock):
+    stock("Odd", "100%_Special")
+
+    response = client.get("/api/vehicles/search", params={"model": "%_"}, headers=auth_headers())
+
+    assert names(response) == ["100%_Special"]
