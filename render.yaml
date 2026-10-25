@@ -1,0 +1,39 @@
+# Render Blueprint for the backend + a managed PostgreSQL database.
+# Deploy it yourself from the Render dashboard (New > Blueprint). Nothing here is deployed automatically.
+# After the first deploy, open a Render shell on the web service and run:  python -m app.seed
+services:
+  - type: web
+    name: dealership-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /docs
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dealership-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "60"
+      # URL of the deployed frontend (e.g. https://your-app.vercel.app). Set in the dashboard.
+      - key: CORS_ORIGINS
+        sync: false
+      # Only needed when running `python -m app.seed`.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: dealership-db
+    plan: free
+    databaseName: dealership
+    user: dealership
