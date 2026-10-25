@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    /* faint paper grain: two offset dot grids */
+    background-image: radial-gradient(rgba(21, 19, 15, 0.07) 1px, transparent 1px),
+      radial-gradient(rgba(21, 19, 15, 0.05) 1px, transparent 1px);
+    background-size: 22px 22px, 37px 37px;
+    background-position: 0 0, 11px 17px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-optical-sizing: auto;
+  }
+
+  :focus-visible {
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
