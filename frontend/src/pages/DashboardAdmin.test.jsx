@@ -101,4 +101,16 @@ describe("DashboardPage as admin", () => {
     expect(await screen.findByText(/no vehicles on the lot yet/i)).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^add vehicle$/i }).length).toBeGreaterThan(0);
   });
+
+  it("renders dialogs outside the spaced page container so the backdrop covers the whole viewport", async () => {
+    renderAdmin();
+    await screen.findByRole("heading", { name: /toyota camry/i });
+
+    await userEvent.click(screen.getByRole("button", { name: /^add vehicle$/i }));
+
+    const backdrop = screen.getByRole("dialog").parentElement;
+    // space-y-* adds margin-top to later siblings, which shifts a position:fixed backdrop down.
+    expect(backdrop.closest('[class*="space-y"]')).toBeNull();
+    expect(backdrop.parentElement).toBe(document.body);
+  });
 });
