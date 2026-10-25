@@ -41,7 +41,12 @@ def decode_access_token(token: str, *, settings: Settings | None = None) -> str:
     """Return the ``sub`` claim of a valid token or raise InvalidTokenError."""
     settings = settings or get_settings()
     try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(
+            token,
+            settings.jwt_secret_key,
+            algorithms=[settings.jwt_algorithm],
+            options={"require": ["exp", "sub"]},
+        )
     except jwt.PyJWTError as exc:
         raise InvalidTokenError(str(exc)) from exc
     subject = payload.get("sub")
