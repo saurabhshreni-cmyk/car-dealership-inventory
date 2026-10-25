@@ -61,3 +61,12 @@ def test_seed_promotes_existing_user_to_admin(client, session):
 def test_seed_requires_admin_credentials_from_env(overrides):
     with pytest.raises(SeedConfigError):
         run_seed(settings(**overrides))
+
+
+def test_seed_config_check_ignores_a_developers_local_dotenv(tmp_path, monkeypatch):
+    """A backend/.env (created by following the README) must not leak into these tests."""
+    (tmp_path / ".env").write_text("ADMIN_EMAIL=dev@example.com\nADMIN_PASSWORD=dev-password-1\n")
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(SeedConfigError):
+        run_seed(settings())
