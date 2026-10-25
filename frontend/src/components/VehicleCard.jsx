@@ -32,7 +32,7 @@ export default function VehicleCard({ vehicle, isAdmin, busy = false, onPurchase
   const lowStock = quantity <= LOW_STOCK_THRESHOLD;
 
   return (
-    <article className="group relative flex flex-col border-2 border-ink bg-cream shadow-hard transition duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg">
+    <article className="group relative flex w-full flex-col border-2 border-ink bg-cream shadow-hard transition duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg">
       <header className="flex items-center justify-between border-b-2 border-ink px-4 py-2 text-xs font-bold uppercase tracking-widest">
         <span className="text-ink/60">{stockNumber(id)}</span>
         <span className="border border-ink bg-brass/30 px-2 py-0.5">{category}</span>
@@ -46,9 +46,15 @@ export default function VehicleCard({ vehicle, isAdmin, busy = false, onPurchase
 
         <p className="font-display text-4xl tabular-nums text-ink">{formatPrice(price)}</p>
 
-        <div className="mt-auto flex flex-col gap-2">
+        <div className="relative mt-auto flex flex-col gap-2">
           <StockMeter quantity={quantity} />
           <p className={`text-sm font-bold ${lowStock ? "text-signal" : "text-pine"}`}>{stockLabel(quantity)}</p>
+          {soldOut && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 -rotate-6 border-4 border-signal bg-cream/80 px-2 py-0.5 font-display text-xl font-bold uppercase text-signal after:content-['Sold_out']"
+            />
+          )}
         </div>
 
         <button
@@ -81,12 +87,6 @@ export default function VehicleCard({ vehicle, isAdmin, busy = false, onPurchase
         )}
       </div>
 
-      {soldOut && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute right-3 top-14 -rotate-12 border-4 border-signal px-3 py-1 font-display text-2xl font-bold uppercase text-signal after:content-['Sold_out']"
-        />
-      )}
     </article>
   );
 }
