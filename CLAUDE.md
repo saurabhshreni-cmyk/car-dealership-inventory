@@ -14,6 +14,8 @@ Every commit Claude helps with ends with two blank lines, then:
 Co-authored-by: Claude <noreply@anthropic.com>
 ```
 
+Always commit with --cleanup=verbatim so the two blank lines before the Co-authored-by trailer are preserved.
+
 ## 3. Clean code and SOLID
 - Thin routes: parse/validate input, call a service, return the response.
 - Business logic lives in services; DB access lives in repositories only.
