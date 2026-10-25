@@ -31,3 +31,23 @@ def test_register_duplicate_email_is_conflict_case_insensitive(client):
 def test_register_rejects_invalid_email_and_short_password(client):
     assert register(client, email="not-an-email").status_code == 422
     assert register(client, password="short").status_code == 422
+
+
+def test_register_accepts_a_password_of_exactly_72_bytes(client):
+    assert register(client, password="a" * 72).status_code == 201
+
+
+def test_register_rejects_password_over_72_bytes_even_when_under_72_characters(client):
+    multibyte = "é" * 40  # 40 characters, 80 bytes: bcrypt cannot hash this
+
+    response = register(client, password=multibyte)
+
+    assert response.status_code == 422
+
+
+def test_login_with_overlong_multibyte_password_is_unauthorized_not_a_server_error(client):
+    register(client)
+
+    response = client.post("/api/auth/login", json={"email": "buyer@example.com", "password": "é" * 40})
+
+    assert response.status_code == 401
