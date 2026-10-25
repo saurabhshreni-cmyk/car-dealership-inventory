@@ -6,7 +6,7 @@ A full-stack inventory app for a car dealership: browse and search vehicles, buy
 - **Frontend:** React · Vite · Tailwind · Vitest · React Testing Library
 - **Built test-first:** every behaviour has a `test:` (red) commit followed by a `feat:` (green) commit. See `git log`.
 
-![Dashboard (admin view)](docs/screenshots/07-dashboard-admin.png)
+![Dashboard (admin view)](docs/screenshots/admin-desktop.png)
 
 ## Architecture
 
@@ -40,23 +40,17 @@ and inserts the purchase row in the same transaction. If no row was updated the 
 
 ## Screenshots
 
-| Login | Register |
-|---|---|
-| ![Login](docs/screenshots/01-login.png) | ![Register](docs/screenshots/02-register.png) |
+Captured from the running app with Playwright (`playwright-core` driving Microsoft Edge), at desktop (1360×900) and mobile (390×844) widths.
 
-| Dashboard (user) | Filtered by category chip |
-|---|---|
-| ![Dashboard](docs/screenshots/03-dashboard-user.png) | ![Filtered](docs/screenshots/04-dashboard-filtered.png) |
-
-| My purchases | Mobile |
-|---|---|
-| ![My purchases](docs/screenshots/05-my-purchases.png) | ![Mobile](docs/screenshots/06-dashboard-mobile.png) |
-
-| Admin dashboard | Admin: add vehicle |
-|---|---|
-| ![Admin](docs/screenshots/07-dashboard-admin.png) | ![Add vehicle](docs/screenshots/08-admin-add-vehicle.png) |
-
-Screenshots were captured from the running app with Playwright (`playwright-core` driving the installed Microsoft Edge).
+| View | Desktop | Mobile |
+|---|---|---|
+| Login | ![Login](docs/screenshots/login-desktop.png) | ![Login](docs/screenshots/login-mobile.png) |
+| Dashboard | ![Dashboard](docs/screenshots/dashboard-desktop.png) | ![Dashboard](docs/screenshots/dashboard-mobile.png) |
+| Search results | ![Search](docs/screenshots/search-desktop.png) | ![Search](docs/screenshots/search-mobile.png) |
+| Sold-out vehicle | ![Sold out](docs/screenshots/soldout-desktop.png) | ![Sold out](docs/screenshots/soldout-mobile.png) |
+| My purchases | ![My purchases](docs/screenshots/purchases-desktop.png) | ![My purchases](docs/screenshots/purchases-mobile.png) |
+| Admin dashboard | ![Admin](docs/screenshots/admin-desktop.png) | ![Admin](docs/screenshots/admin-mobile.png) |
+| Admin: add vehicle | ![Add vehicle](docs/screenshots/admin-dialog-desktop.png) | ![Add vehicle](docs/screenshots/admin-dialog-mobile.png) |
 
 ## Setup and run
 
@@ -76,6 +70,7 @@ docker compose up --build
 
 ```bash
 # 1. database (optional — the default DATABASE_URL is a local SQLite file)
+cp .env.example .env                # the db container reads POSTGRES_* from this root .env
 docker compose up -d db
 
 # 2. backend
@@ -83,7 +78,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate            # Windows: venv\Scripts\activate
 pip install -r requirements-dev.txt
-cp ../.env.example .env             # edit values; use the Postgres DATABASE_URL if you started the db
+cp ../.env.example .env             # edit values; switch DATABASE_URL to the Postgres line if you started the db
 python -m app.seed                  # creates the admin + demo vehicles
 uvicorn app.main:app --reload       # http://localhost:8000/docs
 
@@ -149,9 +144,10 @@ I made these calls without asking, as requested:
 6. **Money** is `NUMERIC(12,2)` in the database and serialised as a JSON number; fine for display, but a payments system should use integer cents.
 7. **`PUT` is a full replacement** (all five fields required). Quantity can be set there as well as via `restock`.
 8. **Search** is `LIKE`-based with `%`, `_` and `\` treated literally. `min_price > max_price` is a 422. No pagination (the lot is small).
-9. **Passwords** are bcrypt-hashed, 8–72 characters (bcrypt's input limit). Emails are lower-cased; reserved domains such as `.test` are rejected by the email validator.
-10. **Frontend.** Category chips are derived from the inventory; text filters are debounced (350 ms) and use the search endpoint. Admin tools are inline on the dashboard rather than a separate page. Design direction: a warm "dealer's ledger" look (paper, ink, signal orange; Fraunces + Space Grotesk, hard shadows).
-11. **Deployment** is configuration only (`render.yaml`, `frontend/vercel.json`); nothing was deployed.
+9. **Passwords** are bcrypt-hashed, 8–72 **bytes** when UTF-8 encoded (bcrypt's input limit; multi-byte passwords are rejected with 422 rather than crashing). Emails are lower-cased; reserved domains such as `.test` are rejected by the email validator.
+10. **Numeric limits.** Quantity and restock amount are capped at 1,000,000 and vehicle ids must be 1–2,147,483,647, so nothing can overflow a 32-bit `INTEGER` column on PostgreSQL (out-of-range input is a 422, not a 500). Access tokens must carry `exp` and `sub`.
+11. **Frontend.** Category chips are derived from the inventory; text filters are debounced (350 ms) and use the search endpoint. Admin tools are inline on the dashboard rather than a separate page. Design direction: a warm "dealer's ledger" look (paper, ink, signal orange; Fraunces + Space Grotesk, hard shadows).
+12. **Deployment** is configuration only (`render.yaml`, `frontend/vercel.json`); nothing was deployed.
 
 ## Test report
 
@@ -165,18 +161,20 @@ platform win32 -- Python 3.14.4, pytest-9.1.1, pluggy-1.7.0
 rootdir: C:\Users\Saurabh\Projects\car-dealership-inventory\backend
 configfile: pytest.ini
 plugins: anyio-4.15.1, cov-7.1.0
-collected 88 items
-tests\test_auth_login.py ....                                            [  4%]
-tests\test_auth_register.py ....                                         [  9%]
-tests\test_config.py .....                                               [ 14%]
-tests\test_my_purchases.py ....                                          [ 19%]
-tests\test_purchase_concurrency.py .                                     [ 20%]
-tests\test_purchase_endpoint.py .....                                    [ 26%]
-tests\test_restock.py .........                                          [ 36%]
-tests\test_security.py .....                                             [ 42%]
-tests\test_seed.py ........                                              [ 51%]
-tests\test_vehicles_create.py ............                               [ 64%]
-tests\test_vehicles_list_search.py ....................                  [ 87%]
+collected 135 items
+tests\test_auth_login.py .....                                           [  3%]
+tests\test_auth_register.py .......                                      [  8%]
+tests\test_config.py .....                                               [ 12%]
+tests\test_edge_cases.py ..................                              [ 25%]
+tests\test_my_purchases.py ....                                          [ 28%]
+tests\test_purchase_concurrency.py .                                     [ 29%]
+tests\test_purchase_endpoint.py .....                                    [ 33%]
+tests\test_restock.py .........                                          [ 40%]
+tests\test_security.py .........                                         [ 46%]
+tests\test_seed.py .........                                             [ 53%]
+tests\test_validation_limits.py ....................                     [ 68%]
+tests\test_vehicles_create.py ............                               [ 77%]
+tests\test_vehicles_list_search.py ....................                  [ 91%]
 tests\test_vehicles_update_delete.py ...........                         [100%]
 ============================== warnings summary ===============================
 =============================== tests coverage ================================
@@ -198,22 +196,22 @@ app\repositories\user_repository.py          19      0   100%
 app\repositories\vehicle_repository.py       44      0   100%
 app\routes\__init__.py                        0      0   100%
 app\routes\auth.py                           12      0   100%
-app\routes\deps.py                           42      1    98%   69
+app\routes\deps.py                           42      0   100%
 app\routes\purchases.py                       9      0   100%
-app\routes\vehicles.py                       31      0   100%
+app\routes\vehicles.py                       32      0   100%
 app\schemas\__init__.py                       0      0   100%
-app\schemas\auth.py                           9      0   100%
+app\schemas\auth.py                          16      0   100%
 app\schemas\purchase.py                       8      0   100%
-app\schemas\vehicle.py                       22      0   100%
+app\schemas\vehicle.py                       24      0   100%
 app\seed.py                                  35      2    94%   63-64
 app\services\__init__.py                      0      0   100%
-app\services\auth_service.py                 20      0   100%
+app\services\auth_service.py                 26      0   100%
 app\services\inventory_service.py            24      0   100%
-app\services\security.py                     27      3    89%   23-24, 49
+app\services\security.py                     27      1    96%   54
 app\services\vehicle_service.py              22      0   100%
 -----------------------------------------------------------------------
-TOTAL                                       472      9    98%
-======================= 88 passed, 1 warning in 52.38s ========================
+TOTAL                                       488      6    99%
+================== 135 passed, 1 warning in 75.09s (0:01:15) ==================
 ```
 
 ### Backend — same suite against PostgreSQL 16 (Docker)
@@ -224,18 +222,20 @@ platform win32 -- Python 3.14.4, pytest-9.1.1, pluggy-1.7.0
 rootdir: C:\Users\Saurabh\Projects\car-dealership-inventory\backend
 configfile: pytest.ini
 plugins: anyio-4.15.1, cov-7.1.0
-collected 88 items
-tests\test_auth_login.py ....                                            [  4%]
-tests\test_auth_register.py ....                                         [  9%]
-tests\test_config.py .....                                               [ 14%]
-tests\test_my_purchases.py ....                                          [ 19%]
-tests\test_purchase_concurrency.py .                                     [ 20%]
-tests\test_purchase_endpoint.py .....                                    [ 26%]
-tests\test_restock.py .........                                          [ 36%]
-tests\test_security.py .....                                             [ 42%]
-tests\test_seed.py ........                                              [ 51%]
-tests\test_vehicles_create.py ............                               [ 64%]
-tests\test_vehicles_list_search.py ....................                  [ 87%]
+collected 135 items
+tests\test_auth_login.py .....                                           [  3%]
+tests\test_auth_register.py .......                                      [  8%]
+tests\test_config.py .....                                               [ 12%]
+tests\test_edge_cases.py ..................                              [ 25%]
+tests\test_my_purchases.py ....                                          [ 28%]
+tests\test_purchase_concurrency.py .                                     [ 29%]
+tests\test_purchase_endpoint.py .....                                    [ 33%]
+tests\test_restock.py .........                                          [ 40%]
+tests\test_security.py .........                                         [ 46%]
+tests\test_seed.py .........                                             [ 53%]
+tests\test_validation_limits.py ....................                     [ 68%]
+tests\test_vehicles_create.py ............                               [ 77%]
+tests\test_vehicles_list_search.py ....................                  [ 91%]
 tests\test_vehicles_update_delete.py ...........                         [100%]
 ============================== warnings summary ===============================
 =============================== tests coverage ================================
@@ -257,22 +257,22 @@ app\repositories\user_repository.py          19      0   100%
 app\repositories\vehicle_repository.py       44      0   100%
 app\routes\__init__.py                        0      0   100%
 app\routes\auth.py                           12      0   100%
-app\routes\deps.py                           42      1    98%   69
+app\routes\deps.py                           42      0   100%
 app\routes\purchases.py                       9      0   100%
-app\routes\vehicles.py                       31      0   100%
+app\routes\vehicles.py                       32      0   100%
 app\schemas\__init__.py                       0      0   100%
-app\schemas\auth.py                           9      0   100%
+app\schemas\auth.py                          16      0   100%
 app\schemas\purchase.py                       8      0   100%
-app\schemas\vehicle.py                       22      0   100%
+app\schemas\vehicle.py                       24      0   100%
 app\seed.py                                  35      2    94%   63-64
 app\services\__init__.py                      0      0   100%
-app\services\auth_service.py                 20      0   100%
+app\services\auth_service.py                 26      0   100%
 app\services\inventory_service.py            24      0   100%
-app\services\security.py                     27      3    89%   23-24, 49
+app\services\security.py                     27      1    96%   54
 app\services\vehicle_service.py              22      0   100%
 -----------------------------------------------------------------------
-TOTAL                                       472     15    97%
-================== 88 passed, 1 warning in 64.81s (0:01:04) ===================
+TOTAL                                       488     12    98%
+================== 135 passed, 1 warning in 90.02s (0:01:30) ==================
 ```
 
 ### Frontend — Vitest + coverage
@@ -282,49 +282,47 @@ TOTAL                                       472     15    97%
 > vitest run --coverage
  RUN  v2.1.9 C:/Users/Saurabh/Projects/car-dealership-inventory/frontend
       Coverage enabled with v8
- ✓ src/api/api.test.js (9 tests) 54ms
- ✓ src/auth/AuthContext.test.jsx (7 tests) 684ms
-   ✓ AuthProvider > login stores token and user 342ms
- ✓ src/components/AppShell.test.jsx (4 tests) 769ms
-   ✓ AppShell > shows navigation, the signed-in email and the page content 486ms
- ✓ src/components/Toast.test.jsx (3 tests) 1008ms
-   ✓ Toast > announces success politely and errors assertively 605ms
- ✓ src/pages/PurchasesPage.test.jsx (4 tests) 743ms
-   ✓ PurchasesPage > shows loading, then each purchase with price and date 364ms
- ✓ src/components/VehicleCard.test.jsx (7 tests) 950ms
-   ✓ VehicleCard > shows make, model, category, formatted price and stock 316ms
- ✓ src/components/FilterBar.test.jsx (4 tests) 1220ms
-   ✓ FilterBar > reports text and price changes 768ms
- ✓ src/App.test.jsx (4 tests) 345ms
- ✓ src/pages/DashboardPage.test.jsx (10 tests) 3471ms
-   ✓ DashboardPage > shows a loading state, then the vehicle cards 636ms
-   ✓ DashboardPage > shows an error with a retry that recovers 332ms
-   ✓ DashboardPage > purchases a vehicle, toasts, and updates stock in place 301ms
-   ✓ DashboardPage > derives category chips from the inventory and filters by category 562ms
-   ✓ DashboardPage > debounces text search before calling the API 512ms
-   ✓ DashboardPage > explains when filters match nothing and offers to clear them 535ms
- ✓ src/pages/DashboardAdmin.test.jsx (6 tests) 3682ms
-   ✓ DashboardPage as admin > adds a vehicle and shows the new card 2003ms
-   ✓ DashboardPage as admin > keeps the dialog open and shows the error when creation fails 618ms
-   ✓ DashboardPage as admin > edits a vehicle in place 378ms
-   ✓ DashboardPage as admin > restocks a vehicle 304ms
-   ✓ DashboardPage as admin > deletes a vehicle only after confirmation 341ms
- ✓ src/pages/AuthPages.test.jsx (10 tests) 4335ms
-   ✓ LoginPage > submits credentials and lands on the dashboard 1171ms
-   ✓ LoginPage > shows the server error and stays on the page 756ms
-   ✓ LoginPage > disables the button while the request is in flight 458ms
-   ✓ RegisterPage > rejects mismatched passwords without calling the API 631ms
-   ✓ RegisterPage > registers, signs in and lands on the dashboard 628ms
-   ✓ RegisterPage > surfaces a duplicate-email error 560ms
- ✓ src/components/AdminDialogs.test.jsx (10 tests) 4626ms
-   ✓ VehicleFormDialog > submits a numeric payload when adding 1814ms
-   ✓ VehicleFormDialog > blocks submission and explains invalid input 824ms
-   ✓ VehicleFormDialog > shows server errors and stays open 719ms
-   ✓ RestockDialog > rejects zero, negative and fractional amounts 555ms
+ ✓ src/api/api.test.js (9 tests) 72ms
+ ✓ src/components/AppShell.test.jsx (4 tests) 615ms
+   ✓ AppShell > shows navigation, the signed-in email and the page content 394ms
+ ✓ src/auth/AuthContext.test.jsx (7 tests) 771ms
+   ✓ AuthProvider > login stores token and user 338ms
+ ✓ src/components/FilterBar.test.jsx (4 tests) 1171ms
+   ✓ FilterBar > reports text and price changes 763ms
+ ✓ src/pages/PurchasesPage.test.jsx (4 tests) 755ms
+   ✓ PurchasesPage > shows loading, then each purchase with price and date 384ms
+ ✓ src/components/VehicleCard.test.jsx (7 tests) 872ms
+   ✓ VehicleCard > shows make, model, category, formatted price and stock 321ms
+ ✓ src/components/Toast.test.jsx (3 tests) 956ms
+   ✓ Toast > announces success politely and errors assertively 532ms
+ ✓ src/App.test.jsx (4 tests) 339ms
+ ✓ src/pages/DashboardPage.test.jsx (10 tests) 3221ms
+   ✓ DashboardPage > shows a loading state, then the vehicle cards 564ms
+   ✓ DashboardPage > derives category chips from the inventory and filters by category 525ms
+   ✓ DashboardPage > debounces text search before calling the API 506ms
+   ✓ DashboardPage > explains when filters match nothing and offers to clear them 516ms
+ ✓ src/pages/DashboardAdmin.test.jsx (7 tests) 3765ms
+   ✓ DashboardPage as admin > adds a vehicle and shows the new card 1776ms
+   ✓ DashboardPage as admin > keeps the dialog open and shows the error when creation fails 620ms
+   ✓ DashboardPage as admin > edits a vehicle in place 404ms
+   ✓ DashboardPage as admin > restocks a vehicle 329ms
+   ✓ DashboardPage as admin > deletes a vehicle only after confirmation 404ms
+ ✓ src/components/AdminDialogs.test.jsx (10 tests) 4302ms
+   ✓ VehicleFormDialog > submits a numeric payload when adding 1400ms
+   ✓ VehicleFormDialog > blocks submission and explains invalid input 881ms
+   ✓ VehicleFormDialog > shows server errors and stays open 684ms
+   ✓ RestockDialog > rejects zero, negative and fractional amounts 573ms
+ ✓ src/pages/AuthPages.test.jsx (10 tests) 4269ms
+   ✓ LoginPage > submits credentials and lands on the dashboard 1099ms
+   ✓ LoginPage > shows the server error and stays on the page 581ms
+   ✓ LoginPage > disables the button while the request is in flight 510ms
+   ✓ RegisterPage > rejects mismatched passwords without calling the API 642ms
+   ✓ RegisterPage > registers, signs in and lands on the dashboard 660ms
+   ✓ RegisterPage > surfaces a duplicate-email error 657ms
  Test Files  12 passed (12)
-      Tests  78 passed (78)
-   Start at  13:15:00
-   Duration  10.29s (transform 1.44s, setup 5.19s, collect 11.91s, tests 21.89s, environment 30.03s, prepare 4.65s)
+      Tests  79 passed (79)
+   Start at  13:55:50
+   Duration  9.27s (transform 1.63s, setup 3.77s, collect 9.93s, tests 21.11s, environment 25.34s, prepare 4.91s)
  % Coverage report from v8
 -------------------|---------|----------|---------|---------|-------------------
 File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
@@ -336,24 +334,25 @@ All files          |   98.88 |    94.75 |   91.39 |   98.88 |
   api.js           |   96.96 |    91.66 |      75 |   96.96 | 18-19             
  src/auth          |   98.41 |     90.9 |      75 |   98.41 |                   
   AuthContext.jsx  |   98.41 |     90.9 |      75 |   98.41 | 32                
- src/components    |   98.28 |    94.92 |   97.61 |   98.28 |                   
+ src/components    |    98.3 |    94.92 |   97.61 |    98.3 |                   
   AppShell.jsx     |     100 |      100 |     100 |     100 |                   
   AuthLayout.jsx   |     100 |      100 |     100 |     100 |                   
   ...irmDialog.jsx |   90.62 |       80 |     100 |   90.62 | 15-17             
   FilterBar.jsx    |     100 |      100 |    87.5 |     100 |                   
   FormField.jsx    |     100 |      100 |     100 |     100 |                   
-  Modal.jsx        |     100 |     90.9 |     100 |     100 | 27                
+  Modal.jsx        |     100 |     90.9 |     100 |     100 | 29                
   ...ctedRoute.jsx |     100 |      100 |     100 |     100 |                   
   ...ockDialog.jsx |   91.89 |    88.88 |     100 |   91.89 | 23-25             
   Toast.jsx        |     100 |    95.23 |     100 |     100 | 63                
   VehicleCard.jsx  |     100 |      100 |     100 |     100 |                   
   ...ormDialog.jsx |   97.29 |     92.5 |     100 |   97.29 | 14-15             
+  styles.js        |     100 |      100 |     100 |     100 |                   
  src/lib           |     100 |      100 |     100 |     100 |                   
   format.js        |     100 |      100 |     100 |     100 |                   
   ...uncedValue.js |     100 |      100 |     100 |     100 |                   
  src/pages         |     100 |    95.79 |      92 |     100 |                   
   ...boardPage.jsx |     100 |    96.05 |    87.5 |     100 | 68,72,110         
-  LoginPage.jsx    |     100 |     92.3 |     100 |     100 | 17                
+  LoginPage.jsx    |     100 |     92.3 |     100 |     100 | 15                
   ...hasesPage.jsx |     100 |    94.11 |     100 |     100 | 36                
   RegisterPage.jsx |     100 |      100 |     100 |     100 |                   
 -------------------|---------|----------|---------|---------|-------------------
@@ -366,13 +365,13 @@ All files          |   98.88 |    94.75 |   91.39 |   98.88 |
 > vite build
 vite v5.4.21 building for production...
 transforming...
-✓ 53 modules transformed.
+✓ 54 modules transformed.
 rendering chunks...
 computing gzip size...
 dist/index.html                   1.19 kB │ gzip:  0.66 kB
-dist/assets/index-CwAG2PhP.css   18.20 kB │ gzip:  4.43 kB
-dist/assets/index-BUtr8ZQ2.js   196.23 kB │ gzip: 61.94 kB
-✓ built in 2.40s
+dist/assets/index-DtySegjF.css   18.50 kB │ gzip:  4.48 kB
+dist/assets/index-Dc8vvaiT.js   196.26 kB │ gzip: 61.95 kB
+✓ built in 2.46s
 ```
 
 ## TDD process
@@ -381,6 +380,8 @@ dist/assets/index-BUtr8ZQ2.js   196.23 kB │ gzip: 61.94 kB
 
 - Pure styling fixes (e.g. card width, sold-out stamp position) and the app entry glue (`main.jsx`, `index.html`, CSS) cannot be unit-tested in jsdom; they were checked with `vite build` and by screenshotting the running app.
 - One `test:` commit (LIKE-wildcard escaping) is a characterization test that already passed; its commit body says so. A few tests initially passed vacuously (a 404 on a missing route) and were tightened before being committed.
+- A final skeptical audit added fixes with red tests first (JWT `exp` required, UTF-8 password byte limit, integer-range caps, constant-work login, modal backdrop offset, `.env` leaking into tests) plus one characterization file (`tests/test_edge_cases.py`, 18 tests that passed on first run). Two audit slips are on record: the body of `3cce9d3` says "10 passed" but the real count was 7, and `4e8c8a9` (modal fix) accidentally also contains an earlier, since-replaced batch of screenshots. History was not rewritten.
+- Every `test:`/`feat:` pair was re-verified by checking out both commits and running the new tests: 19 cycles, red then green each time.
 - Infrastructure commits (`chore:`/`ci:`) have no tests of their own. The `ci:` commit also contains `render.yaml` and `frontend/vercel.json`, because the commit helper staged everything; history was not rewritten.
 
 ## Deployment (prepared, not deployed)
@@ -391,7 +392,7 @@ dist/assets/index-BUtr8ZQ2.js   196.23 kB │ gzip: 61.94 kB
 
 ## Known limitations
 
-- No rate limiting or account lockout on login; login timing differs slightly between unknown email and wrong password.
+- No rate limiting or account lockout on login (unknown-email and wrong-password logins do the same bcrypt work and return the same 401).
 - JWT in `localStorage` (simple, but exposed to XSS); no refresh tokens or logout-everywhere.
 - No Playwright end-to-end suite (only screenshots); no ESLint/ruff/mypy configured.
 - Render and Vercel configs are untested. The GitHub Actions workflow ran green on its first push (backend on a Postgres service, frontend tests + build).
