@@ -6,9 +6,12 @@ from app.models.vehicle import Vehicle
 from app.schemas.vehicle import VehicleSearchParams
 
 
+_LIKE_ESCAPES = str.maketrans({"\\": "\\\\", "%": "\\%", "_": "\\_"})
+
+
 def _contains(column, term: str):
-    escaped = term.lower().replace("\\", "\\\\").replace("%", "\%").replace("_", "\_")
-    return func.lower(column).like(f"%{escaped}%", escape="\\")
+    """Case-insensitive substring match where %, _ and backslash in ``term`` are literal."""
+    return func.lower(column).like(f"%{term.lower().translate(_LIKE_ESCAPES)}%", escape="\\")
 
 
 class VehicleRepository:
