@@ -1,14 +1,14 @@
 """Vehicle routes (thin: validate, authorise, delegate to the service)."""
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.models.user import User
 from app.routes.deps import get_current_user, get_inventory_service, get_vehicle_service, require_admin
 from app.schemas.purchase import PurchaseOut
 from app.schemas.vehicle import RestockRequest, VehicleCreate, VehicleOut, VehicleSearchParams
-from app.services.inventory_service import InventoryService, OutOfStockError
-from app.services.vehicle_service import VehicleNotFoundError, VehicleService
+from app.services.inventory_service import InventoryService
+from app.services.vehicle_service import VehicleService
 
 router = APIRouter(prefix="/api/vehicles", tags=["vehicles"], dependencies=[Depends(get_current_user)])
 
@@ -46,10 +46,7 @@ def update_vehicle(
     service: VehicleService = Depends(get_vehicle_service),
 ):
     """Replace a vehicle's details (admin only)."""
-    try:
-        return service.update(vehicle_id, payload)
-    except VehicleNotFoundError:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehicle not found")
+    return service.update(vehicle_id, payload)
 
 
 @router.delete("/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -59,10 +56,7 @@ def delete_vehicle(
     service: VehicleService = Depends(get_vehicle_service),
 ):
     """Delete a vehicle (admin only)."""
-    try:
-        service.delete(vehicle_id)
-    except VehicleNotFoundError:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehicle not found")
+    service.delete(vehicle_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -72,13 +66,8 @@ def purchase_vehicle(
     user: User = Depends(get_current_user),
     service: InventoryService = Depends(get_inventory_service),
 ):
-    """Buy one unit of a vehicle; 409 when it is out of stock."""
-    try:
-        return service.purchase(vehicle_id, user.id)
-    except VehicleNotFoundError:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehicle not found")
-    except OutOfStockError:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Vehicle is out of stock")
+    """Buy one unit of a vehicle (404 unknown, 409 when out of stock)."""
+    return service.purchase(vehicle_id, user.id)
 
 
 @router.post("/{vehicle_id}/restock", response_model=VehicleOut)
@@ -89,7 +78,4 @@ def restock_vehicle(
     service: InventoryService = Depends(get_inventory_service),
 ):
     """Add stock to a vehicle (admin only)."""
-    try:
-        return service.restock(vehicle_id, payload.amount)
-    except VehicleNotFoundError:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehicle not found")
+    return service.restock(vehicle_id, payload.amount)
