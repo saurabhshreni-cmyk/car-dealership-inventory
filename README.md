@@ -380,8 +380,8 @@ dist/assets/index-Dc8vvaiT.js   196.26 kB │ gzip: 61.95 kB
 
 - Pure styling fixes (e.g. card width, sold-out stamp position) and the app entry glue (`main.jsx`, `index.html`, CSS) cannot be unit-tested in jsdom; they were checked with `vite build` and by screenshotting the running app.
 - One `test:` commit (LIKE-wildcard escaping) is a characterization test that already passed; its commit body says so. A few tests initially passed vacuously (a 404 on a missing route) and were tightened before being committed.
-- A final skeptical audit added fixes with red tests first (JWT `exp` required, UTF-8 password byte limit, integer-range caps, constant-work login, modal backdrop offset, `.env` leaking into tests) plus one characterization file (`tests/test_edge_cases.py`, 18 tests that passed on first run). Two audit slips are on record: the body of `3cce9d3` says "10 passed" but the real count was 7, and `4e8c8a9` (modal fix) accidentally also contains an earlier, since-replaced batch of screenshots. History was not rewritten.
-- Every `test:`/`feat:` pair was re-verified by checking out both commits and running the new tests: 19 cycles, red then green each time.
+- A final audit added `test:`/`fix:` pairs for bugs it found (JWT without `exp`, >72-byte passwords, integer overflow on PostgreSQL, login timing, modal backdrop offset, `.env` leaking into tests) and one `test:` commit of 18 characterization tests that passed immediately.
+- Audit blemishes, left in history rather than rewritten: commit `3cce9d3`'s body says "10 passed" (the real number was 7), and `4e8c8a9` (modal fix) also swept in a set of screenshots that were later replaced.
 - Infrastructure commits (`chore:`/`ci:`) have no tests of their own. The `ci:` commit also contains `render.yaml` and `frontend/vercel.json`, because the commit helper staged everything; history was not rewritten.
 
 ## Deployment (prepared, not deployed)
