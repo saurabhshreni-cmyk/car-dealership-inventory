@@ -42,3 +42,19 @@ class VehicleRepository:
         if params.max_price is not None:
             stmt = stmt.where(Vehicle.price <= params.max_price)
         return list(self._session.scalars(stmt.order_by(Vehicle.id)))
+
+    def get(self, vehicle_id: int) -> Vehicle | None:
+        """Return the vehicle with this id, or None."""
+        return self._session.get(Vehicle, vehicle_id)
+
+    def update(self, vehicle: Vehicle, **fields) -> Vehicle:
+        """Apply ``fields`` to ``vehicle`` and persist."""
+        for name, value in fields.items():
+            setattr(vehicle, name, value)
+        self._session.commit()
+        return vehicle
+
+    def delete(self, vehicle: Vehicle) -> None:
+        """Remove a vehicle."""
+        self._session.delete(vehicle)
+        self._session.commit()
