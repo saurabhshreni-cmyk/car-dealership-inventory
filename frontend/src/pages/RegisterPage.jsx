@@ -3,7 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
-import { SUBMIT_BUTTON } from "./LoginPage";
+import { SUBMIT_BUTTON } from "../components/styles";
 
 const MIN_PASSWORD_LENGTH = 8;
 

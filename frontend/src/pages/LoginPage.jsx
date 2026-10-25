@@ -3,9 +3,7 @@ import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import AuthLayout from "../components/AuthLayout";
 import FormField from "../components/FormField";
-
-export const SUBMIT_BUTTON =
-  "w-full border-2 border-ink bg-ink px-4 py-3 text-sm font-bold uppercase tracking-widest text-paper transition hover:bg-signal hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-wait disabled:opacity-60";
+import { SUBMIT_BUTTON } from "../components/styles";
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
