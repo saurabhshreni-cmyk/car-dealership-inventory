@@ -4,6 +4,9 @@ from typing import Annotated
 
 from pydantic import BaseModel, StrictInt, ConfigDict, Field, PlainSerializer, StringConstraints, model_validator
 
+MAX_QUANTITY = 1_000_000  # keeps stock arithmetic far inside a 32-bit INTEGER column
+INT32_MAX = 2_147_483_647
+
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
 Price = Annotated[
     Decimal,
@@ -19,7 +22,7 @@ class VehicleCreate(BaseModel):
     model: Text
     category: Text
     price: Price
-    quantity: int = Field(ge=0)
+    quantity: int = Field(ge=0, le=MAX_QUANTITY)
 
 
 class VehicleOut(BaseModel):
@@ -54,4 +57,4 @@ class VehicleSearchParams(BaseModel):
 class RestockRequest(BaseModel):
     """Payload to add stock to a vehicle."""
 
-    amount: StrictInt = Field(gt=0)
+    amount: StrictInt = Field(gt=0, le=MAX_QUANTITY)

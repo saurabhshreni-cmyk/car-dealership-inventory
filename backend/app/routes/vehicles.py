@@ -1,14 +1,16 @@
 """Vehicle routes (thin: validate, authorise, delegate to the service)."""
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 
 from app.models.user import User
 from app.routes.deps import get_current_user, get_inventory_service, get_vehicle_service, require_admin
 from app.schemas.purchase import PurchaseOut
-from app.schemas.vehicle import RestockRequest, VehicleCreate, VehicleOut, VehicleSearchParams
+from app.schemas.vehicle import INT32_MAX, RestockRequest, VehicleCreate, VehicleOut, VehicleSearchParams
 from app.services.inventory_service import InventoryService
 from app.services.vehicle_service import VehicleService
+
+VehicleId = Annotated[int, Path(ge=1, le=INT32_MAX)]
 
 router = APIRouter(prefix="/api/vehicles", tags=["vehicles"], dependencies=[Depends(get_current_user)])
 
@@ -40,7 +42,7 @@ def search_vehicles(
 
 @router.put("/{vehicle_id}", response_model=VehicleOut)
 def update_vehicle(
-    vehicle_id: int,
+    vehicle_id: VehicleId,
     payload: VehicleCreate,
     _admin: User = Depends(require_admin),
     service: VehicleService = Depends(get_vehicle_service),
@@ -51,7 +53,7 @@ def update_vehicle(
 
 @router.delete("/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_vehicle(
-    vehicle_id: int,
+    vehicle_id: VehicleId,
     _admin: User = Depends(require_admin),
     service: VehicleService = Depends(get_vehicle_service),
 ):
@@ -62,7 +64,7 @@ def delete_vehicle(
 
 @router.post("/{vehicle_id}/purchase", response_model=PurchaseOut, status_code=status.HTTP_201_CREATED)
 def purchase_vehicle(
-    vehicle_id: int,
+    vehicle_id: VehicleId,
     user: User = Depends(get_current_user),
     service: InventoryService = Depends(get_inventory_service),
 ):
@@ -72,7 +74,7 @@ def purchase_vehicle(
 
 @router.post("/{vehicle_id}/restock", response_model=VehicleOut)
 def restock_vehicle(
-    vehicle_id: int,
+    vehicle_id: VehicleId,
     payload: RestockRequest,
     _admin: User = Depends(require_admin),
     service: InventoryService = Depends(get_inventory_service),
