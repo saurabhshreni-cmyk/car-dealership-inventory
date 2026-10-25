@@ -43,3 +43,17 @@ def test_login_unknown_email_is_unauthorized_with_same_message(client):
 
     assert wrong_pw.status_code == unknown.status_code == 401
     assert wrong_pw.json() == unknown.json()
+
+
+def test_login_verifies_a_password_hash_even_for_unknown_emails(client, monkeypatch):
+    """Unknown and known emails must cost the same bcrypt work (no user-enumeration timing gap)."""
+    import app.services.auth_service as auth_service
+
+    real_verify = auth_service.verify_password
+    calls = []
+    monkeypatch.setattr(auth_service, "verify_password", lambda p, h: calls.append(h) or real_verify(p, h))
+
+    response = login(client, email="nobody@example.com")
+
+    assert response.status_code == 401
+    assert len(calls) == 1
