@@ -1,6 +1,6 @@
 # PROMPTS
 Part A is an excerpt from my planning chat with Claude (claude.ai). I only included the prompt pack Claude gave me; the rest of that chat contains private personal documents and messages and is omitted.
-Part B is a copy of the Claude Code conversation as it appeared on screen. Collapsed tool-output blocks (for example "Ran 13 commands") were not expanded, so they appear only as their summary lines.
+Part B is a copy of the Claude Code conversation as it appeared on screen. Collapsed tool-output blocks (for example "Ran 13 commands") were not expanded, so they appear only as their summary lines. Part B is PARTIAL: it contains only the portion of the conversation the app had rendered when I copied it, not the whole session; the full session is kept on my computer and can be shared on request.
 
 ## Part A: planning chat excerpt (claude.ai)
 
