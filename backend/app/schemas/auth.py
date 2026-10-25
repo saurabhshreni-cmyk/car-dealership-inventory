@@ -17,3 +17,18 @@ class UserOut(BaseModel):
     id: int
     email: str
     role: str
+
+
+class LoginRequest(BaseModel):
+    """Payload for POST /api/auth/login."""
+
+    email: EmailStr
+    password: str = Field(max_length=72)
+
+
+class TokenOut(BaseModel):
+    """Login response: bearer token plus the authenticated user."""
+
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut

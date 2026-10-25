@@ -1,7 +1,7 @@
 """Registration business logic."""
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.services.security import hash_password
+from app.services.security import create_access_token, hash_password, verify_password
 
 
 class EmailAlreadyRegisteredError(Exception):
@@ -13,8 +13,12 @@ def normalise_email(email: str) -> str:
     return email.strip().lower()
 
 
+class InvalidCredentialsError(Exception):
+    """Raised when email/password do not match an account."""
+
+
 class AuthService:
-    """Registers accounts. Registration always creates a normal user."""
+    """Registers accounts (always normal users) and authenticates logins."""
 
     def __init__(self, users: UserRepository) -> None:
         self._users = users
@@ -25,3 +29,10 @@ class AuthService:
         if self._users.get_by_email(email) is not None:
             raise EmailAlreadyRegisteredError(email)
         return self._users.add(email, hash_password(password))
+
+    def login(self, email: str, password: str) -> tuple[str, User]:
+        """Return (access_token, user) or raise InvalidCredentialsError."""
+        user = self._users.get_by_email(normalise_email(email))
+        if user is None or not verify_password(password, user.password_hash):
+            raise InvalidCredentialsError()
+        return create_access_token(str(user.id)), user
