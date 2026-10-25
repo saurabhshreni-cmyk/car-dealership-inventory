@@ -25,3 +25,9 @@ class UserRepository:
         self._session.add(user)
         self._session.commit()
         return user
+
+    def set_role(self, user: User, role: Role) -> User:
+        """Change a user's role and persist."""
+        user.role = role.value
+        self._session.commit()
+        return user
