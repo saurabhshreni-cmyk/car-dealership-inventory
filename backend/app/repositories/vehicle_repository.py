@@ -1,7 +1,14 @@
 """Persistence for vehicles."""
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.vehicle import Vehicle
+from app.schemas.vehicle import VehicleSearchParams
+
+
+def _contains(column, term: str):
+    escaped = term.lower().replace("\\", "\\\\").replace("%", "\%").replace("_", "\_")
+    return func.lower(column).like(f"%{escaped}%", escape="\\")
 
 
 class VehicleRepository:
@@ -16,3 +23,22 @@ class VehicleRepository:
         self._session.add(vehicle)
         self._session.commit()
         return vehicle
+
+    def list_all(self) -> list[Vehicle]:
+        """Return every vehicle ordered by id."""
+        return list(self._session.scalars(select(Vehicle).order_by(Vehicle.id)))
+
+    def search(self, params: VehicleSearchParams) -> list[Vehicle]:
+        """Return vehicles matching all supplied filters, ordered by id."""
+        stmt = select(Vehicle)
+        if params.make:
+            stmt = stmt.where(_contains(Vehicle.make, params.make))
+        if params.model:
+            stmt = stmt.where(_contains(Vehicle.model, params.model))
+        if params.category:
+            stmt = stmt.where(func.lower(Vehicle.category) == params.category.strip().lower())
+        if params.min_price is not None:
+            stmt = stmt.where(Vehicle.price >= params.min_price)
+        if params.max_price is not None:
+            stmt = stmt.where(Vehicle.price <= params.max_price)
+        return list(self._session.scalars(stmt.order_by(Vehicle.id)))
