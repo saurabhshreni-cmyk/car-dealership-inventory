@@ -13,12 +13,12 @@ from app.config import Settings
     ],
 )
 def test_database_url_is_normalised_for_the_psycopg_driver(raw, expected):
-    settings = Settings(jwt_secret_key="x" * 32, database_url=raw)
+    settings = Settings(_env_file=None, jwt_secret_key="x" * 32, database_url=raw)
 
     assert settings.database_url == expected
 
 
 def test_cors_origins_are_split_and_trimmed():
-    settings = Settings(jwt_secret_key="x" * 32, cors_origins="http://a.test, http://b.test ,")
+    settings = Settings(_env_file=None, jwt_secret_key="x" * 32, cors_origins="http://a.test, http://b.test ,")
 
     assert settings.cors_origin_list == ["http://a.test", "http://b.test"]

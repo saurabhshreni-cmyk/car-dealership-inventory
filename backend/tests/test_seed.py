@@ -10,7 +10,7 @@ ADMIN = {"admin_email": "Boss@Example.com", "admin_password": "admin-password-1"
 
 
 def settings(**overrides) -> Settings:
-    return Settings(jwt_secret_key="x" * 32, **overrides)
+    return Settings(_env_file=None, jwt_secret_key="x" * 32, **overrides)
 
 
 def test_seed_creates_admin_who_can_log_in(client, session):
