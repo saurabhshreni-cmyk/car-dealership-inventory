@@ -46,3 +46,28 @@ def session():
 
     with get_session_factory()() as db:
         yield db
+
+
+@pytest.fixture
+def create_user(session):
+    """Factory inserting a user with the given role directly via the repository."""
+    from app.models.user import Role
+    from app.repositories.user_repository import UserRepository
+    from app.services.security import hash_password
+
+    def _create(email: str = "someone@example.com", role: str = "user", password: str = "correct-horse"):
+        return UserRepository(session).add(email, hash_password(password), Role(role))
+
+    return _create
+
+
+@pytest.fixture
+def auth_headers(create_user):
+    """Factory returning Authorization headers for a freshly created user."""
+    from app.services.security import create_access_token
+
+    def _headers(role: str = "user", email: str | None = None) -> dict[str, str]:
+        user = create_user(email or f"{role}@example.com", role)
+        return {"Authorization": f"Bearer {create_access_token(str(user.id))}"}
+
+    return _headers
