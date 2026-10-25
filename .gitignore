@@ -28,3 +28,10 @@ dist/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local databases
+*.db
+*.sqlite3
+
+# Screenshots tooling
+.playwright/
