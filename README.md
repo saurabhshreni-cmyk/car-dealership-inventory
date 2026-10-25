@@ -394,7 +394,7 @@ dist/assets/index-BUtr8ZQ2.js   196.23 kB │ gzip: 61.94 kB
 - No rate limiting or account lockout on login; login timing differs slightly between unknown email and wrong password.
 - JWT in `localStorage` (simple, but exposed to XSS); no refresh tokens or logout-everywhere.
 - No Playwright end-to-end suite (only screenshots); no ESLint/ruff/mypy configured.
-- Render and Vercel configs are untested; the GitHub Actions workflow had not run when this README was written.
+- Render and Vercel configs are untested. The GitHub Actions workflow ran green on its first push (backend on a Postgres service, frontend tests + build).
 
 ## My AI Usage
 
