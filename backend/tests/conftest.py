@@ -71,3 +71,16 @@ def auth_headers(create_user):
         return {"Authorization": f"Bearer {create_access_token(str(user.id))}"}
 
     return _headers
+
+
+@pytest.fixture
+def stock(session):
+    """Factory inserting a vehicle straight into the database."""
+    from app.repositories.vehicle_repository import VehicleRepository
+
+    def _stock(make="Toyota", model="Camry", category="Sedan", price=25000, quantity=3):
+        return VehicleRepository(session).add(
+            make=make, model=model, category=category, price=price, quantity=quantity
+        )
+
+    return _stock
